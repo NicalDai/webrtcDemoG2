@@ -3,32 +3,32 @@
  * NetEase Crop.
  */
 
-var targetAccid;
-var currentUid;
-var isLogined = false;      // is nim logined
-var isCalling = false;      // is in netcall
-var isLocalAudioMuted = false;
-var isRemoteAudioMuted = false;
+let targetAccid;
+let currentUid;
+let isLogined = false;      // is nim logined
+let isCalling = false;      // is in netcall
+let isLocalAudioMuted = false;
+let isRemoteAudioMuted = false;
 
-var containerRemote;        // Remote video container
-var acceptDiv;              // accept div
-var callerInfoDiv;          // show caller info
+let containerRemote;        // Remote video container
+let acceptDiv;              // accept div
+let callerInfoDiv;          // show caller info
 
-var callerIcon;
-var callerID;               // to show the info of user
-var currentCallType;        // current call type
-var currentCid = 0;         // current channel id
-var hasNotified = false;    // be call notified
-var beCallingId;    // be call information
+let callerIcon;
+let callerID;               // to show the info of user
+let currentCallType;        // current call type
+let currentCid = 0;         // current channel id
+let hasNotified = false;    // be call notified
+let beCallingId;    // be call information
 
-var calleeBtn;
-var hangupBtnCall;          // hangup Button when calling
-var hangupBtnBeCalled;      // hangup Button be called
-var microMuteBtn;           // mute forward voice stream
-var speakerMuteBtn;         // mute receiving voice stream
+let calleeBtn;
+let hangupBtnCall;          // hangup Button when calling
+let hangupBtnBeCalled;      // hangup Button be called
+let microMuteBtn;           // mute forward voice stream
+let speakerMuteBtn;         // mute receiving voice stream
 
-var netcall;                // WebRTC instance initialized
-var remoteStream;           //
+let netcall;                // WebRTC instance initialized
+let remoteStream;           //
 
 let app_key = '45c6af3c98409b18a84451215d0bdd6e';
 let app_secret = '37db56012b60';
@@ -36,16 +36,16 @@ let nonce = '12345';
 let curTime = Math.floor(new Date().getTime()/1000);
 let checkSum = SHA1(app_secret + nonce + curTime);
 
-var currentAccid;           // current Logined accid;
+let currentAccid;           // current Logined accid;
 
 /**
  * Window UI Bridge
  */
 window.onload = function () {
 
-    var targetAccidEdt = document.getElementById('targetAccid');
-    var startCallBtn = document.getElementById('startCall');
-    var logoutBtn = document.getElementById('logoutBtn');
+    let targetAccidEdt = document.getElementById('targetAccid');
+    let startCallBtn = document.getElementById('startCall');
+    let logoutBtn = document.getElementById('logoutBtn');
     //divs
     callerInfoDiv = document.getElementById('callerInfoDiv');
     containerRemote = document.getElementById('containerRemote');
@@ -61,7 +61,7 @@ window.onload = function () {
     speakerMuteBtn = document.getElementById('speakerMute');
 
     /***************************** Button Click Event *******************************/
-    microMuteBtn.onclick = function() {
+    microMuteBtn.onclick = function() {                                         // mute Local audio Stream
         if (isCalling){
             if (isLocalAudioMuted){
                 rtc.localStream.unmuteAudio().then(function (obj) {
@@ -83,7 +83,7 @@ window.onload = function () {
         }
 
     };
-    speakerMuteBtn.onclick = function() {
+    speakerMuteBtn.onclick = function() {                                       // mute remote audio Stream
         if (isCalling){
             if (isRemoteAudioMuted){
                 remoteStream.unmuteAudio().then(function (obj) {
@@ -133,7 +133,7 @@ window.onload = function () {
 
 /***************************** NIM *******************************/
 
-var nim = SDK.NIM.getInstance({
+var nim = SDK.NIM.getInstance({                                                 // NIM init, initial for calling signal service.
     debug: true,
     db:true,
     appKey: '45c6af3c98409b18a84451215d0bdd6e',
@@ -147,12 +147,12 @@ var nim = SDK.NIM.getInstance({
     onmsg:onMsg
 });
 
+// for test
 function onMsg(msg) {
     docLogUtil("收到消息", msg.content);
 }
 
-
-function onConnect() {
+function onConnect() {                                                          // After NIM connect , init the G2 webrtc instance.
     isLogined = true;
     docLogUtil('Connection Established');
     console.log(nim);
@@ -198,18 +198,18 @@ function onError(error) {
  * init WebRTC by nim
  */
 
-// rtc object
-let rtc = {
+
+let rtc = {                                                 // rtc object definition
     client: null,
     localStream: null,
 };
 
-function initWebRTC() {
+function initWebRTC() {                                     // init webrtc 2.0 instance
     rtc.client = WebRTC2.createClient({
         appkey: '45c6af3c98409b18a84451215d0bdd6e',         // Your appkey
         debug: true,                                        // Enable specific log print
     });
-    registerObserver();
+    registerObserver();                                     // After init webrtc 2.0 , register some event observer, like calling receiver.. hangup receiver
 }
 /**
  * Some Observer within calling
@@ -226,7 +226,7 @@ function registerObserver() {
         docLogUtil('有人离开'+_event.channelId+'房间,用户uid是'+_event.uid);
     });
     //监听频道里其他人发布音视频
-    rtc.client.on('stream-added', evt => {
+    rtc.client.on('stream-added', evt => {                                  // play remote video and audio stream
         remoteStream = evt.stream;
         docLogUtil('收到别人的发布消息'+remoteStream.streamID);
         // 发起视频订阅
@@ -245,9 +245,9 @@ function registerObserver() {
         remoteStream.stop()
     });
     //播放订阅的对端的音视频流
-    rtc.client.on('stream-subscribed', evt => {
+    rtc.client.on('stream-subscribed', evt => {                             // terminate the remote stream
         console.warn('订阅别人的流成功的通知');
-        var remoteStream = evt.stream;
+        remoteStream = evt.stream;
         let div = document.getElementById('containerRemote');
         //开始播放远端音视频流
         remoteStream.play(div).then(()=>{
@@ -266,8 +266,8 @@ function registerObserver() {
  * @param targetAccid
  */
 function forwardCall(targetAccid) {
-    sendCallNotification(targetAccid,'call');          // send custom notification to ask target user for join the channel.
-    joinChannel(currentAccid,new Date().getTime(),false);
+    sendCallNotification(targetAccid,'call');                   // send custom notification to ask target user for join the channel.
+    joinChannel(currentAccid,new Date().getTime(),false);       // join WebRTC 2.0 channel.
 }
 
 /**
@@ -318,23 +318,23 @@ function joinChannel(channelName,uid,isCallin) {
 /**
  * 开始采集初始化，发布流
  * */
-function startRTCConnect(uid) {
-    showCallEstablishedUI();                                                    //Established UI process
+function startRTCConnect(uid) {                                                 // start webrtc 2.0 engine
+    showCallEstablishedUI();                                                    // Established UI process
     //初始化本地流并且发布
     // 此处以同时启动麦克风与摄像头(或者屏幕共享)设备示例
     WebRTC2.getDevices().then((devices)=>{
-        var audioDevices = devices.audioIn;  //数组，麦克风设备列表
-        var videoDevices = devices.video;  //数组，摄像头设备列表
+        var audioDevices = devices.audioIn;                                     //get the Array of microphone list
+        var videoDevices = devices.video;                                       //get the Array of camera list
 
         var selectedMicrophoneId = audioDevices[0];
         var selectedCameraId = videoDevices[0];
         rtc.localStream = WebRTC2.createStream({
             uid: uid,
             audio: true,
-            microphoneId: selectedMicrophoneId, // open the specific microphone
+            microphoneId: selectedMicrophoneId,                                 // assign the microphone we need open
             video: true,
-            cameraId: selectedCameraId, //指定要开启的camera
-            // screen: true
+            cameraId: selectedCameraId,                                         // assign the camera we need open
+            // screen: true                                                     // if you need Screen sharing, please assign this field true，and assign field 'video' false.
         });
 
         rtc.localStream.init().then(()=>{
@@ -342,13 +342,13 @@ function startRTCConnect(uid) {
             let div = document.getElementById('containerLocal');
             rtc.localStream.play(div);
             //设置播放的视频容器大小
-            rtc.localStream.setLocalRenderMode({
+            rtc.localStream.setLocalRenderMode({                                // show local video Stream
                 width: 90,
                 height: 180,
                 cut: true
             });
             // 将本地音视频流发布至云信服务器
-            rtc.client.publish(rtc.localStream).then(()=>{
+            rtc.client.publish(rtc.localStream).then(()=>{                      // send local video to Webrtc server
                 console.warn('本地 publish 成功');
             }).catch(function (err) {
                 console.error('rtc.client.publish',err);
@@ -385,6 +385,12 @@ function hangupAndClear(force) {
  */
 
 /***************************** Call Signal Control *******************************/
+
+/**
+ * Calling signal Logic
+ * @param targetAccid send toward this accid
+ * @param type  'call' 'reject' 'busy' 'hangup'
+ */
 function sendCallNotification(targetAccid,type) {
     let content = {
         type: type,
